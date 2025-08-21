@@ -1,102 +1,226 @@
+// app/gate-npk2/page.tsx
+"use client";
+
+import { useState, useEffect } from "react";
+import KpiCard from "../components/npk2/KpiCard";
+import Clock from "../components/npk2/Clock";
+import StatusPill from "../components/npk2/StatusPill";
 import Image from "next/image";
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+type GateData = {
+  totalInside: number;
+  karyawanPKC: number;
+  kontraktor: number;
+  praktikan: number;
+  visitor: number;
+  lastUpdate: Date;
+};
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+const initial: GateData = {
+  totalInside: 370,
+  karyawanPKC: 34,
+  kontraktor: 219,
+  praktikan: 0,
+  visitor: 117,
+  lastUpdate: new Date(),
+};
+
+export default function GateNPK2Page() {
+  const [data, setData] = useState<GateData>(initial);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    // Initial loading simulation
+    const loadingTimer: ReturnType<typeof setTimeout> = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+
+    // Data refresh simulation every 10 seconds
+    const refreshInterval: ReturnType<typeof setInterval> = setInterval(() => {
+      // Random connection failure (5% chance)
+      const shouldFail = Math.random() < 0.05;
+
+      if (shouldFail) {
+        setIsConnected(false);
+        setHasError(true);
+
+        // Reconnect after 3 seconds
+        const reTimer: ReturnType<typeof setTimeout> = setTimeout(() => {
+          setIsConnected(true);
+          setHasError(false);
+        }, 3000);
+
+        // clear timeout jika effect dibersihkan sebelum selesai
+        return () => clearTimeout(reTimer);
+      }
+
+      // Update data with small random variations (±2%)
+      setData(() => {
+        const variation = () => Math.random() * 0.04 - 0.02; // -2% to +2%
+
+        const newKaryawan = Math.max(
+          0,
+          Math.round(initial.karyawanPKC * (1 + variation()))
+        );
+        const newKontraktor = Math.max(
+          0,
+          Math.round(initial.kontraktor * (1 + variation()))
+        );
+        const newPraktikan = Math.max(
+          0,
+          Math.round(
+            initial.praktikan +
+              (Math.random() > 0.8 ? Math.floor(Math.random() * 3) : 0)
+          )
+        );
+        const newVisitor = Math.max(
+          0,
+          Math.round(initial.visitor * (1 + variation()))
+        );
+
+        return {
+          karyawanPKC: newKaryawan,
+          kontraktor: newKontraktor,
+          praktikan: newPraktikan,
+          visitor: newVisitor,
+          totalInside: newKaryawan + newKontraktor + newPraktikan + newVisitor,
+          lastUpdate: new Date(),
+        };
+      });
+    }, 10000);
+
+    return () => {
+      clearTimeout(loadingTimer);
+      clearInterval(refreshInterval);
+    };
+  }, []);
+
+  // SVG pattern aman tanpa masalah kutip (pakai style.backgroundImage)
+  const patternSvg =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E";
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col relative">
+      {/* Background Pattern */}
+      <div
+        className="absolute inset-0 opacity-50"
+        style={{ backgroundImage: `url("${patternSvg}")` }}
+        aria-hidden="true"
+      />
+
+      {hasError && (
+        <div
+          className="bg-gradient-to-r from-red-600 to-red-700 text-white py-4 px-8 text-center font-semibold text-lg shadow-lg border-l-4 border-red-400 backdrop-blur-sm"
+          role="alert"
+        >
+          <div className="flex items-center justify-center gap-3">
+            <svg
+              className="w-6 h-6"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>Koneksi terputus, mencoba menyambung...</span>
+          </div>
+        </div>
+      )}
+
+      <header className="relative h-36 bg-gradient-to-r from-slate-800/90 to-slate-700/90 backdrop-blur-lg border-b border-slate-600/50 shadow-xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/10 to-yellow-600/10" />
+        <div className="relative flex items-center justify-between px-12 h-full">
+          <div className="flex-shrink-0">
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+              src="/logo_pkc_light.png"
+              alt="Company Logo"
+              width={80}
+              height={80}
+              className="rounded-xl shadow-lg border-2 border-white/20"
+              priority
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
+
+          <div className="flex-1 text-center mx-8">
+            <div className="mb-2">
+              <h1 className="text-4xl xl:text-5xl font-black text-white tracking-tight drop-shadow-lg">
+                PUPUK KUJANG
+              </h1>
+            </div>
+            <div className="flex items-center justify-center gap-3">
+              <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-24" />
+              <span className="text-2xl xl:text-3xl font-semibold text-emerald-300 tracking-wide">
+                GATE NPK2
+              </span>
+              <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-24" />
+            </div>
+          </div>
+
+          <div className="flex-shrink-0">
+            <Clock />
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 p-8 relative">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 w-full max-w-[1400px] mx-auto h-[calc(100vh-18rem)]">
+          {/* Total Card - Takes full height on left */}
+          <div className="xl:row-span-2">
+            <KpiCard
+              title="Total Inside NPK2"
+              value={data.totalInside}
+              variant="total"
+              isLoading={isLoading}
+              ariaLabel={`Total orang di dalam area NPK2: ${data.totalInside} orang`}
+            />
+          </div>
+
+          {/* Stats Cards Grid */}
+          <div className="xl:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 h-full">
+            <KpiCard
+              title="Karyawan PKC"
+              value={data.karyawanPKC}
+              variant="pkc"
+              isLoading={isLoading}
+              ariaLabel={`Karyawan PKC: ${data.karyawanPKC} orang`}
+            />
+            <KpiCard
+              title="PHL & Kontraktor"
+              value={data.kontraktor}
+              variant="kontraktor"
+              isLoading={isLoading}
+              ariaLabel={`PHL dan Kontraktor: ${data.kontraktor} orang`}
+            />
+            <KpiCard
+              title="Praktikan"
+              value={data.praktikan}
+              variant="praktikan"
+              isLoading={isLoading}
+              ariaLabel={`Praktikan: ${data.praktikan} orang`}
+            />
+            <KpiCard
+              title="Visitor"
+              value={data.visitor}
+              variant="visitor"
+              isLoading={isLoading}
+              ariaLabel={`Visitor: ${data.visitor} orang`}
+            />
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      <footer className="relative h-20 flex items-center justify-center px-12 bg-slate-800/60 backdrop-blur-xl border-t border-slate-600/50">
+        <StatusPill
+          isConnected={isConnected}
+          lastUpdate={data.lastUpdate}
+          hasError={hasError}
+        />
       </footer>
     </div>
   );
